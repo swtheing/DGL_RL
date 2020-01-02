@@ -96,6 +96,7 @@ def forward_from_record(self, g, h):
 
 # 评测和对比
 下面对比了一下在游戏上的整体效果：
+
 | Epoch| Q-Table | Q-Table with GNN | RL with GNN|
 | ------ | ------ | ------ |------|
 | 1 | 0.029 | 0.013|0.054|
