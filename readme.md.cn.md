@@ -1,19 +1,23 @@
-# Reinforcement Learning(RL) with Graph Neural Network(GNN)
-We do an RL with GNN demo based on DGL
+# Reinforcement Learning(RL) with Graph Neutral Network(GNN)
 
-## Introduction
+在DGL基础上做的RL with GNN Demo
 
-This demo has two parts:
+## 介绍
 
-1）We implement the Q-learning algorithm with Q-Table on DGL。
+这个Demo分为两部分
 
-2）We design a new RL mechanism based on GNN. It uses a graph to record the states and the transformation among them and update the Q value with the message passing mechanism.
+1）使用GNN完全复现Q-Table机制。
 
-### Environment
+2）使用GNN抛弃Q机制，实现新的RL机制。
 
-[FrozenLake-v0](https://gym.openai.com/envs/FrozenLake-v0/)：it is from OpenAI Gym，which has 16 states.
+### 环境介绍
 
-### Install
+[FrozenLake-v0](https://gym.openai.com/envs/FrozenLake-v0/)：来自OpenAI Gym，特点是状态分布有限（16个基础状态）。
+
+### Q-Table与强化学习的介绍
+https://www.cnblogs.com/DjangoBlog/p/9398684.html
+
+### 预先安装
 ```bash
 pip install dgl
 pip install pytorch
@@ -21,11 +25,11 @@ pip install gym
 ```
 
 ## Demo 1 : Q-Table with GNN
-First, we construct a graph,
+初始化图:
 ```bash
-self.bg = dgl.DGLGraph().
+self.bg = dgl.DGLGraph()
 ```
-Second, we use add_nodes function to add new nodes. In the graph, the 'x' represents the feature of a node and the 'z' represents the Q value of a node. Therefore, a Q-Table is represented by a graph. 
+利用 add_nodes加入新节点, 加入data['x']表示节点，加入data['z']表示Q结果:
 ```bash
 def add_nodes(self, features):
     nodes_id = self.bg.number_of_nodes()
@@ -35,26 +39,26 @@ def add_nodes(self, features):
             return i;
     self.bg.add_nodes(1, {'x': features, 'z': torch.zeros(1, N_ACTIONS)})
 ```
-Then we iteratively updates the Q-Table by Q-learning algorithem.
+进行Q-table更新
 ```bash
 def learn_one(self, nodes_id, next_nodes_id, r):
     h_target = self.eval_net(self.bg, self.bg.ndata['x'])
     q_target = (r + GAMMA * h_target[next_nodes_id, :].max(0)[0])
     self.eval_net.record(self.bg, nodes_id, q_target)
 ```
-At last, we predict the action under a state by the Q value in each node of the graph.
+预测结果
 ```bash
 def forward_from_record(self, g, h):
     return g.ndata['z'];
 ```
 ## Demo 2 : RL with GNN
-In Demo 2, we drop the Q-learning algorithm. We just use a graph to record the states and the transformation among them and update the Q value with the message passing function.
+在Demo 2中我们将抛弃整个Q机制，而是用图自动更新Q值。我们利用图构建状态游戏中的状态转换机制，并在图更新中自动学习Q值.
 
-In Demo2, we need to construct a graph with nodes and edges. We use nodes to represent the states and use the edges to represent the relationship between nodes. There are three properties in an edge from node A to node B：
+除了在DEMO 1中的构图之外，我们需要简历图中节点的边：
 
-- A is the next state of B.
-- The first column records the reward from B to A，
-- The second column records the number of actions that we take when we encounter B and then step into A in the game.
+- 边方向是状态转换的反方向，是为了reward的回溯，
+- 边的第一列记录了状态A到状态B的action & reward，
+- 边的第二列记录了状态A到状态B action走过的次数。
 
 ```bash
  def add_edges(self, nodes_id, next_nodes_id, a, r):
@@ -73,10 +77,9 @@ In Demo2, we need to construct a graph with nodes and edges. We use nodes to rep
      edge[0, 1, a] = 1.0
      self.bg.add_edges(dst, src, {'e': edge})
 ```
-Besides, we design a new graph message passing mechanism to learn the Q value.
-- In message_fuc, we send the product of the maximum Q value of node B and the number of actions, and the number of actions from B to A.
-- In reduce_fuc, we collect each Q value under the each ation and the total numbers of each action. It is due to that each Q-value has been multiplied the number of the actions. The Q-value of each action is divided the total number of each actions in reduce-fuc. 
-
+除此之外，我们加入了图的更新机制：
+- 在message_fuc中我们计算了B节点的Q的最大值，并在不同边上乘以了边的action返回给A节点，除此之外我们也把走过action 的次数返回给B节点。
+- 在B节点上，我们reduce每个action的Q值，处以整个action整体的次数（相当于加权平均），这样就按照(action, State)的分布更新了Q值，这就是为什么GNN领先与Q-Table的地方。
 ```bash
  def message_func(self, edges):
      Q = GAMMA * torch.max(edges.src['z'], dim = -1, keepdim = True)[0] \
@@ -91,8 +94,8 @@ Besides, we design a new graph message passing mechanism to learn the Q value.
      return {'z': z}
 ```
 
-# Evaluation：
-We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN (Demo2) on the FrozenLake-v0
+# 评测和对比
+下面对比了一下在游戏上的整体效果：
 
 | Epoch| Q-Table | Q-Table with GNN | RL with GNN|
 | ------ | ------ | ------ |------|
@@ -107,5 +110,8 @@ We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN
 | 9 | 0.032 | 0.008 |0.060|
 | 10 | 0.035 | 0.009 |0.070|
 
+最终建立的图：
+
+![GNN建立的图](https://github.com/swtheing/DGL_RL/blob/master/GNN_Trans.png)
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

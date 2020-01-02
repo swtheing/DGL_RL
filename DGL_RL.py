@@ -9,17 +9,11 @@ import matplotlib.pyplot as plt
 from gym.envs.registration import register
 
 # Hyper Parameters
-BATCH_SIZE = 16
-LR = 0.01                   # learning rate
 EPSILON = 0.5               # greedy policy
 GAMMA = 0.95                 # reward discount
-TARGET_REPLACE_ITER = 100   # target update frequency
-MEMORY_CAPACITY = 100
 env = gym.make('FrozenLake-v0')
 env = env.unwrapped
-SAMPLE_EDGES = 20
 N_ACTIONS = env.action_space.n
-N_H = 20
 BETA = 0.2
 N_STATES = 16
 ENV_A_SHAPE = 0 if isinstance(env.action_space.sample(), int) else env.action_space.sample().shape     # to confirm the shape
@@ -30,29 +24,11 @@ class GATLayer(nn.Module):
         super(GATLayer, self).__init__()
 
     def message_func(self, edges):
-        # message UDF for equation (3) & (4)
-        #print(edges.data['e'].shape)
-        #print(edges.data['e'][:,1,:].shape)
-        #print("begin:")
-        #print(edges.src['x'])
-        #print(edges.dst['x'])
-        #print(edges.src['z'])
-        #print("edge_data:")
-        #print(edges.data['e'])
         Q = GAMMA * torch.max(edges.src['z'], dim = -1, keepdim = True)[0] * edges.data['e'][:,1,:] + edges.data['e'][:,0,:]
         a_count = edges.data['e'][:,1,:]
         return {'q': Q, 'ac' : a_count}
 
     def reduce_func(self, nodes):
-        # reduce UDF for equation (3) & (4)
-        # equation (3)
-        #print("begin:")
-        #print(nodes.data['z'].shape)
-        #print(nodes.mailbox['e'].shape)
-        #print(nodes.mailbox['z'].shape)
-        #print("alpha size:" + str(alpha.shape))
-        # equation (4)
-        #print ((alpha * nodes.mailbox['z']).shape)
         z = BETA * nodes.data['z'] + (1 - BETA) * torch.sum(nodes.mailbox['q'], dim = 1) / (torch.sum(nodes.mailbox['ac'], dim = 1) + 1e-6)
         return {'z': z}
 
@@ -84,9 +60,6 @@ class DQN(object):
     def __init__(self):
         self.bg = dgl.DGLGraph()
         self.eval_net, self.target_net = GAT(N_STATES, N_H, N_ACTIONS), GAT(N_STATES, N_H, N_ACTIONS)
-        self.learn_step_counter = 0                                     # for target updating
-        self.memory_counter = 0                                         # for storing memory
-        self.memory = np.zeros((MEMORY_CAPACITY, 1 * 2 + 3))     # initialize memory
 
     def add_edges(self, nodes_id, next_nodes_id, a, r):
         if nodes_id == next_nodes_id:
@@ -105,12 +78,6 @@ class DQN(object):
         edge[0, 1, a] = 1.0
         #print(edge)
         self.bg.add_edges(dst, src, {'e': edge})
-        #print(self.bg.edata['e'])
-        #nx.draw_networkx(self.bg.to_networkx())
-        #plt.show()
-        #print(src)
-        #print(dst)
-
 
     def add_nodes(self, features):
         nodes_id = self.bg.number_of_nodes()
@@ -123,8 +90,6 @@ class DQN(object):
         #dst = [nodes_id]
         #self.bg.add_edges(src, dst) 
         return nodes_id
-            
-        
         
     def choose_action(self, nodes_id):
         actions_value = self.eval_net(self.bg)[nodes_id]
@@ -135,11 +100,6 @@ class DQN(object):
         Q = actions_value[action];
 
         return action, Q.detach().numpy()
-
-    def learn_one(self, nodes_id, next_nodes_id, r):
-        h_target = self.eval_net(self.bg, self.bg.ndata['x'])
-        q_target = (r + GAMMA * h_target[next_nodes_id, :].max(0)[0])
-        self.eval_net.record(self.bg, nodes_id, q_target)
 
     def learn(self):
         self.eval_net.bp(self.bg)
