@@ -110,6 +110,7 @@ def forward_from_record(self, g, h):
 | 9 | 0.032 | 0.008 |0.060|
 | 10 | 0.035 | 0.009 |0.070|
 
-
+最终建立的图：
+![GNN建立的图](https://github.com/swtheing/DGL_RL/blob/master/GNN_Trans.png)
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
