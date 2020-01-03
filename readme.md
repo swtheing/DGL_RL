@@ -13,6 +13,11 @@ This demo has two parts:
 
 [FrozenLake-v0](https://gym.openai.com/envs/FrozenLake-v0/)：it is from OpenAI Gym，which has 16 states.
 
+### Q-Learning Algorithm
+Q-learning is a off-policy TD control algorithm, defined by
+
+$$Q(S_t, A_t) = Q(S_t, A_t) + \alpha[R_{t+1} + \gamma\max_a Q(S_{t+1}, a) - Q(S_t, A_t)].$$
+
 ### Install
 ```bash
 pip install dgl
@@ -25,14 +30,14 @@ First, we construct a graph,
 ```bash
 self.bg = dgl.DGLGraph().
 ```
-Second, we use add_nodes function to add new nodes. In the graph, the 'x' represents the feature of a node and the 'z' represents the Q value of a node. Therefore, a Q-Table is represented by a graph. 
+Second, we use add_nodes function to add new nodes. In the graph, the 'x' represents the feature of a node and the 'z' represents the Q value of a node. Therefore, a Q-Table is represented by a graph. In this function, we just add a node with new features which is stored in 'x'. 
 ```bash
 def add_nodes(self, features):
     nodes_id = self.bg.number_of_nodes()
     if nodes_id != 0:
-    for i in range(len(self.bg.ndata['x'])):
-        if self.bg.ndata['x'][i].equal(features[0]):
-            return i;
+        for i in range(len(self.bg.ndata['x'])):
+            if self.bg.ndata['x'][i].equal(features[0]):
+                return i;
     self.bg.add_nodes(1, {'x': features, 'z': torch.zeros(1, N_ACTIONS)})
 ```
 Then we iteratively updates the Q-Table by Q-learning algorithem.
@@ -44,7 +49,7 @@ def learn_one(self, nodes_id, next_nodes_id, r):
 ```
 At last, we predict the action under a state by the Q value in each node of the graph.
 ```bash
-def forward_from_record(self, g, h):
+def forward_from_record(self, g):
     return g.ndata['z'];
 ```
 ## Demo 2 : RL with GNN
