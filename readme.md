@@ -53,12 +53,15 @@ def forward_from_record(self, g):
     return g.ndata['z'];
 ```
 ## Demo 2 : RL with GNN
-In Demo 2, we drop the Q-learning algorithm. We just use a graph to record the states and the transformation among them and update the Q value with the message passing function.
+In Demo 2, instead of using the Q-learning algorithm, we use a graph to construct a perfect model of the environment. Given the model, we compute the optimal policy by message passing function in GNN. In our demo, the policy improvement equation is defined by
 
-In Demo2, we need to construct a graph with nodes and edges. We use nodes to represent the states and use the edges to represent the relationship between nodes. There are three properties in an edge from node A to node B：
+$$ Q_{i+1}(s, a) = (1-\beta) * \sum_{s',r}p(s',r|s,a)[r + \beta * \gamma max_{a'}q_i(s',a')].$$
+
+As a consequense, we need to construct a graph with nodes and edges. 
+We use nodes to represent the states and use the edges to represent the relationship between nodes. There are three properties in an edge from node A to node B：
 
 - A is the next state of B.
-- The first column records the reward from B to A，
+- The first column records the reward from B to A
 - The second column records the number of actions that we take when we encounter B and then step into A in the game.
 
 ```bash
@@ -79,9 +82,9 @@ In Demo2, we need to construct a graph with nodes and edges. We use nodes to rep
      self.bg.add_edges(dst, src, {'e': edge})
 ```
 Besides, we design a new graph message passing mechanism to learn the Q value.
-- In message_fuc, we send the product of the maximum Q value of node B and the number of actions, and the number of actions from B to A.
-- In reduce_fuc, we collect each Q value under the each ation and the total numbers of each action. It is due to that each Q-value has been multiplied the number of the actions. The Q-value of each action is divided the total number of each actions in reduce-fuc. 
-
+- In message_fuc, we send the product of the maximum Q value of node B and the number of actions, and the number of actions from B to A. Therefore, we calculate
+the $\sum_{n(A, a, B, r)} * \gamma * maxQ(s',a')} + r$ and $\sum_{A, a, B, r}$ and send it from B to A. 
+- In reduce_fuc, we collect each Q value under the each action and the total numbers of each action. We calculate the new $Q(s, a)$ by $\frac{n(s, a, s')}{\sum_a n(s, a, s', r)} * \gamma * maxQ(s', a')$. The $\frac{n{s, a, s', r}}{\sum_a n(s, a, s', r)} is used to evaluate the $p(s', r| s, a)$ 
 ```bash
  def message_func(self, edges):
      Q = GAMMA * torch.max(edges.src['z'], dim = -1, keepdim = True)[0] \
