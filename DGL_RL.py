@@ -19,9 +19,9 @@ N_STATES = 16
 ENV_A_SHAPE = 0 if isinstance(env.action_space.sample(), int) else env.action_space.sample().shape     # to confirm the shape
 
 
-class GATLayer(nn.Module):
+class GNNLayer(nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(GATLayer, self).__init__()
+        super(GNNLayer, self).__init__()
 
     def message_func(self, edges):
         Q = GAMMA * torch.max(edges.src['z'], dim = -1, keepdim = True)[0] * edges.data['e'][:,1,:] + edges.data['e'][:,0,:]
@@ -41,10 +41,10 @@ class GATLayer(nn.Module):
     def forward_from_record(self, g, h):
         return g.ndata['z']
       
-class GAT(nn.Module):
+class GNN(nn.Module):
   def __init__(self, in_feats, hidden_size, num_classes):
-      super(GAT, self).__init__()
-      self.gat1 = GATLayer(in_feats, num_classes)
+      super(GNN, self).__init__()
+      self.gat1 = GNNLayer(in_feats, num_classes)
 
   def record(self, g, nodes_id, records):
       g.ndata['z'][nodes_id,:] = BETA * g.ndata['z'][nodes_id,:] + (1 - BETA) * records
@@ -59,7 +59,7 @@ class GAT(nn.Module):
 class DQN(object):
     def __init__(self):
         self.bg = dgl.DGLGraph()
-        self.eval_net, self.target_net = GAT(N_STATES, N_H, N_ACTIONS), GAT(N_STATES, N_H, N_ACTIONS)
+        self.eval_net = GNN(N_STATES, N_H, N_ACTIONS)
 
     def add_edges(self, nodes_id, next_nodes_id, a, r):
         if nodes_id == next_nodes_id:

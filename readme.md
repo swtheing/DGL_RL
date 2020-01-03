@@ -55,7 +55,7 @@ def forward_from_record(self, g):
 ## Demo 2 : RL with GNN
 In Demo 2, instead of using the Q-learning algorithm, we use a graph to construct a perfect model of the environment. Given the model, we compute the optimal policy by message passing function in GNN. In our demo, the policy improvement equation is defined by
 
-$$ Q_{i+1}(s, a) = \beta * Q_i(s, a) + (1 - \beta)\sum_{s',r}p(s',r|s,a)[r + \gamma max_{a'}q_i(s',a')].$$
+$$ Q_{i+1}(s, a) = \beta * Q_i(s, a) + (1 - \beta)\sum_{s',r}p(s',r|s,a)[r + \gamma max_{a'}Q_i(s',a')].$$
 
 As a consequense, we need to construct a graph with nodes and edges. 
 We use nodes to represent the states and use the edges to represent the relationship between nodes. There are three properties in an edge from node A to node B：

@@ -19,16 +19,16 @@ N_STATES = 16
 ENV_A_SHAPE = 0 if isinstance(env.action_space.sample(), int) else env.action_space.sample().shape     # to confirm the shape
 
 
-class GATLayer(nn.Module):
+class GNNLayer(nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(GATLayer, self).__init__()
+        super(GNNLayer, self).__init__()
 
     def forward_from_record(self, g, h):
         return g.ndata['z'];
       
-class GAT(nn.Module):
+class GNN(nn.Module):
   def __init__(self, in_feats, hidden_size, num_classes):
-      super(GAT, self).__init__()
+      super(GNN, self).__init__()
 
   def record(self, g, nodes_id, records):
         g.ndata['z'][nodes_id,:] = BETA * g.ndata['z'][nodes_id,:] + (1 - BETA) * records
@@ -40,7 +40,7 @@ class GAT(nn.Module):
 class DQN(object):
     def __init__(self):
         self.bg = dgl.DGLGraph()
-        self.eval_net, self.target_net = GAT(N_STATES, N_H, N_ACTIONS), GAT(N_STATES, N_H, N_ACTIONS)
+        self.eval_net = GNN(N_STATES, N_H, N_ACTIONS)
 
     def add_nodes(self, features):
         nodes_id = self.bg.number_of_nodes()
