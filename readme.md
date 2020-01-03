@@ -55,7 +55,7 @@ def forward_from_record(self, g):
 ## Demo 2 : RL with GNN
 In Demo 2, instead of using the Q-learning algorithm, we use a graph to construct a perfect model of the environment. Given the model, we compute the optimal policy by message passing function in GNN. In our demo, the policy improvement equation is defined by
 
-$$ Q_{i+1}(s, a) = (1-\beta) * \sum_{s',r}p(s',r|s,a)[r + \beta * \gamma max_{a'}q_i(s',a')].$$
+$$ Q_{i+1}(s, a) = \beta * Q_i(s, a) + (1 - \beta)\sum_{s',r}p(s',r|s,a)[r + \gamma max_{a'}q_i(s',a')].$$
 
 As a consequense, we need to construct a graph with nodes and edges. 
 We use nodes to represent the states and use the edges to represent the relationship between nodes. There are three properties in an edge from node A to node B：
@@ -84,7 +84,7 @@ We use nodes to represent the states and use the edges to represent the relation
 Besides, we design a new graph message passing mechanism to learn the Q value.
 - In message_fuc, we send the product of the maximum Q value of node B and the number of actions, and the number of actions from B to A. Therefore, we calculate
 the $n(A, a, B, r) * \gamma * maxQ(B, a') + r$ and $n(A, a, B, r)$ and send it from B to A. 
-- In reduce_fuc, we collect each Q value under the each action and the total numbers of each action. We calculate the new $Q(s, a)$ by $\frac{n(s, a, s',r)}{\sum_\hat{a} n(s, \hat{a}, s', r)} * \gamma * maxQ(s', a')$. The $\frac{n(s, a, s', r)}{\sum_\hat{a} n(s, \hat{a}, s', r)}$ is used to evaluate the $p(s', r| s, a)$ 
+- In reduce_fuc, we collect each Q value under the each action and the total numbers of each action. We calculate the new $Q(s, a)$ by $\sum_{s'}\frac{n(s, a, s',r)}{\sum_\hat{a} n(s, \hat{a}, s', r)} * \gamma * maxQ(s', a')$. The $\frac{n(s, a, s', r)}{\sum_\hat{a} n(s, \hat{a}, s', r)}$ is used to evaluate the $p(s', r| s, a)$ 
 ```bash
  def message_func(self, edges):
      Q = GAMMA * torch.max(edges.src['z'], dim = -1, keepdim = True)[0] \
