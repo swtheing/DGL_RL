@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from gym.envs.registration import register
 
 # Hyper Parameters
+C = 0.0001
 EPSILON = 0.5               # greedy policy
 GAMMA = 0.95                 # reward discount
 env = gym.make('FrozenLake-v0')
@@ -30,7 +31,8 @@ class GNNLayer(nn.Module):
 
     def reduce_func(self, nodes):
         z = BETA * nodes.data['z'] + (1 - BETA) * torch.sum(nodes.mailbox['q'], dim = 1) / (torch.sum(nodes.mailbox['ac'], dim = 1) + 1e-6)
-        return {'z': z}
+        a = torch.sum(nodes.mailbox['ac'], dim = 1)
+        return {'z': z, 'a': a}
 
     def bp(self, g):
         g.update_all(self.message_func, self.reduce_func)
@@ -38,8 +40,8 @@ class GNNLayer(nn.Module):
     def forward(self, g):
         return g.ndata['z']
 
-    def forward_from_record(self, g, h):
-        return g.ndata['z']
+    def ac(self, g):
+        return g.ndata['a']
       
 class GNN(nn.Module):
   def __init__(self):
@@ -54,6 +56,10 @@ class GNN(nn.Module):
 
   def forward(self, g):
       h = self.gnn(g)
+      return h
+  
+  def action_number(self, g):
+      h = self.gnn.ac(g)
       return h
       
 class DQN(object):
@@ -84,9 +90,17 @@ class DQN(object):
             for i in range(len(self.bg.ndata['x'])):
                 if self.bg.ndata['x'][i].equal(features[0]):
                     return i;
-        self.bg.add_nodes(1, {'x': features, 'z': torch.zeros(1, N_ACTIONS)})
+        self.bg.add_nodes(1, {'x': features, 'z': torch.zeros(1, N_ACTIONS), 'a': torch.zeros(1, N_ACTIONS)})
         return nodes_id
-        
+
+    def choose_action_ucb(self, nodes_id, time):
+        actions_value = self.eval_net(self.bg)[nodes_id].numpy()
+        actions_value += C * np.sqrt( np.log(time+1) / (self.eval_net.action_number(self.bg)[nodes_id].data.numpy() + 1))
+        action = np.argmax(actions_value)
+        Q = actions_value[action];
+
+        return action, Q
+
     def choose_action(self, nodes_id):
         actions_value = self.eval_net(self.bg)[nodes_id]
         if np.random.uniform() < EPSILON:   # greedy
@@ -115,7 +129,7 @@ for i in range(10000):
     j = 0
     while j < 99:
         j += 1
-        a, Q = dqn.choose_action(nodes_id)
+        a, Q = dqn.choose_action_ucb(nodes_id, i)
         s1, r, d, _ = env.step(a)
 
         x = np.zeros((1, 16))
@@ -126,6 +140,7 @@ for i in range(10000):
         # Update Q_Table
         rAll += r
         nodes_id = next_nodes_id
+        dqn.learn()
         if d == True:
             for i in range(20):
                 if rAll != 0:
@@ -135,3 +150,4 @@ for i in range(10000):
     if (len(rList) == 1000):
         print("Score over time："+ str(sum(rList)/1000))
         rList = []
+

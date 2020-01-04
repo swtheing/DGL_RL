@@ -20,7 +20,7 @@ ENV_A_SHAPE = 0 if isinstance(env.action_space.sample(), int) else env.action_sp
 
 
 class GNNLayer(nn.Module):
-    def __init__(self, in_dim, out_dim):
+    def __init__(self):
         super(GNNLayer, self).__init__()
 
     def forward_from_record(self, g, h):
@@ -29,12 +29,13 @@ class GNNLayer(nn.Module):
 class GNN(nn.Module):
   def __init__(self, in_feats, hidden_size, num_classes):
       super(GNN, self).__init__()
+      self.gnn = GNNLayer()
 
   def record(self, g, nodes_id, records):
         g.ndata['z'][nodes_id,:] = BETA * g.ndata['z'][nodes_id,:] + (1 - BETA) * records
 
   def forward(self, g, features):
-        h = self.gat1.forward_from_record(g, features)
+        h = self.gnn.forward_from_record(g, features)
         return h
       
 class DQN(object):
