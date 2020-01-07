@@ -103,6 +103,7 @@ the $n(A, a, B, r) * \gamma * maxQ(B, a') + r$ and $n(A, a, B, r)$ and send it f
 # Evaluation：
 We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN (Demo2) on the FrozenLake-v0
 - epision = 0.5
+
 | Epoch| Q-Table | Q-Table with GNN | RL with GNN|
 | ------ | ------ | ------ |------|
 | 1 | 0.029 | 0.013|0.054|
@@ -117,6 +118,7 @@ We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN
 | 10 | 0.035 | 0.009 |0.070|
 
 - epision = 0.9
+
 | Epoch| Q-Table | RL with GNN| UCB|
 | ------ | ------ | ------|------|
 | 1 | 0.000 | 0.172| 0.720|
