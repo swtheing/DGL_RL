@@ -25,7 +25,7 @@ pip install pytorch
 pip install gym
 ```
 
-## Demo 1 : Q-Table with GNN
+## Demo 1 : Q-Table with Graph
 First, we construct a graph,
 ```bash
 self.bg = dgl.DGLGraph().
@@ -52,7 +52,7 @@ At last, we predict the action under a state by the Q value in each node of the 
 def forward_from_record(self, g):
     return g.ndata['z'];
 ```
-## Demo 2 : RL with GNN
+## Demo 2 : RL with Graph
 In Demo 2, instead of using the Q-learning algorithm, we use a graph to construct a perfect model of the environment. Given the model, we compute the optimal policy by message passing function in GNN. In our demo, the policy improvement equation is defined by
 
 $$ Q_{i+1}(s, a) = \beta * Q_i(s, a) + (1 - \beta)\sum_{s',r}p(s',r|s,a)[r + \gamma max_{a'}Q_i(s',a')].$$
@@ -99,12 +99,13 @@ the $n(A, a, B, r) * \gamma * maxQ(B, a') + r$ and $n(A, a, B, r)$ and send it f
      return {'z': z}
 ```
 ## Demo 3: UCB
+## Demo 4: UCB with GNN
 
 # Evaluation：
 We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN (Demo2) on the FrozenLake-v0
 - epision = 0.5
 
-| Epoch| Q-Table | Q-Table with GNN | RL with GNN|
+| Epoch| Q-Table | Q-Table with Graph | RL with Graph|
 | ------ | ------ | ------ |------|
 | 1 | 0.029 | 0.013|0.054|
 | 2 | 0.040 | 0.006 |0.077|
@@ -119,18 +120,18 @@ We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN
 
 - epision = 0.9
 
-| Epoch| Q-Table | RL with GNN| UCB|
-| ------ | ------ | ------|------|
-| 1 | 0.000 | 0.172| 0.720|
-| 2 | 0.000 | 0.607| 0.748|
-| 3 | 0.000 | 0.642| 0.749|
-| 4 | 0.016 | 0.623| 0.715|
-| 5 | 0.160 | 0.657| 0.739|
-| 6 | 0.152 | 0.647| 0.727|
-| 7 | 0.171 | 0.638| 0.732|
-| 8 | 0.177 | 0.626| 0.714|
-| 9 | 0.181 | 0.663| 0.726|
-| 10 | 0.152 | 0.638| 0.732|
+| Epoch| Q-Table | RL with Graph| UCB| UCB with GNN|
+| ------ | ------ | ------|------|------|
+| 1 | 0.000 | 0.172| 0.720| 0.550|
+| 2 | 0.000 | 0.607| 0.748| 0.667|
+| 3 | 0.000 | 0.642| 0.749| 0.645|
+| 4 | 0.016 | 0.623| 0.715| 0.651|
+| 5 | 0.160 | 0.657| 0.739| 0.681|
+| 6 | 0.152 | 0.647| 0.727| 0.638|
+| 7 | 0.171 | 0.638| 0.732| 0.654|
+| 8 | 0.177 | 0.626| 0.714| 0.725|
+| 9 | 0.181 | 0.663| 0.726| 0.684|
+| 10 | 0.152 | 0.638| 0.732|0.720|
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
