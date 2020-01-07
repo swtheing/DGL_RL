@@ -98,10 +98,11 @@ the $n(A, a, B, r) * \gamma * maxQ(B, a') + r$ and $n(A, a, B, r)$ and send it f
             / (torch.sum(nodes.mailbox['ac'], dim = 1) + 1e-6)
      return {'z': z}
 ```
+## Demo 3: UCB
 
 # Evaluation：
 We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN (Demo2) on the FrozenLake-v0
-
+- epision = 0.5
 | Epoch| Q-Table | Q-Table with GNN | RL with GNN|
 | ------ | ------ | ------ |------|
 | 1 | 0.029 | 0.013|0.054|
@@ -114,6 +115,20 @@ We compare the performance of Q-Table, Q-Table with GNN (Demo 1) and RL with GNN
 | 8 | 0.034 | 0.006 |0.064|
 | 9 | 0.032 | 0.008 |0.060|
 | 10 | 0.035 | 0.009 |0.070|
+
+- epision = 0.9
+| Epoch| Q-Table | RL with GNN| UCB|
+| ------ | ------ | ------|------|
+| 1 | 0.000 | 0.172| 0.720|
+| 2 | 0.000 | 0.607| 0.748|
+| 3 | 0.000 | 0.642| 0.749|
+| 4 | 0.016 | 0.623| 0.715|
+| 5 | 0.160 | 0.657| 0.739|
+| 6 | 0.152 | 0.647| 0.727|
+| 7 | 0.171 | 0.638| 0.732|
+| 8 | 0.177 | 0.626| 0.714|
+| 9 | 0.181 | 0.663| 0.726|
+| 10 | 0.152 | 0.638| 0.732|
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
